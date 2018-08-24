@@ -11,35 +11,26 @@ the sidecar proxy in the pod.
 
 The service mesh functions by injecting a sidecar proxy container into every
 Kubernetes pod. Sidecars communicate with each other and with the control plane
-to enable mesh features (such as automatic load-balancing, telemetry collection,
-and authentication/authorization).
+to enable mesh features.
 
-The `istio-sidecar-injector` configmap specifies which sidecar container Image
-to inject into new workloads (like Deployments, DaemonSets, and Jobs) when they
-are configured in your cluster.
+Whenever a new pod is created in a namespace where automatic sidecar injection
+has been enabled, the injector will modify your pod by adding Istio components.
 
-This vetter checks pods in namespaces where automatic sidecar injection has been
-enabled. The default setting is manual injection, but Aspen Mesh works best with
-automatic injection. See [Managing Sidecar
-Injection](https://my.aspenmesh.io/client/docs/getting-started/#managing-sidecar-injection)
-for more information
-
-A warning is generated when a pod is using a sidecar container from a different
-image than what is specified in the `istio-sidecar-injector` configmap. If that
-pod is deleted or crashes, the new pod would be injected with a sidecar matching
-the image from the configmap. 
+This warning is generated when a pod is using a `istio-proxy` sidecar image that
+is different than what the injector uses. If that pod is deleted, the
+replacement pod would be injected with a sidecar matching the image from the
+`istio-sidecar-injector` configmap. 
 
 Mismatched images can be problematic for different reasons such as: 
 - missing features, bugfixes, or security patches
 - not compatible with other sidecars or the control plane
-- different image from an unanticipated pod restart may cause unwanted behavior
 
 
 ## Suggested Resolution
 
-Upgrade the sidecar image for these workloads to match the version in the
-`istio-sidecar-injector` configmap, by doing one of the following:
+Re-create this pod so it is injected with a new sidecar matching the version in
+the configmap. 
 
-- re-create (delete or roll out) this pod so it is injected with a new sidecar
-  matching the version in the configmap
-- edit the workload (for example, the Deployment)
+If the pod is managed by a deployment or stateful set, etc., you can delete the
+pod and the pod will be recreated with the correct version. Before deleteing a
+pod, make sure that deleting it will not affect the state of your workload.

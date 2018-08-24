@@ -9,26 +9,28 @@ upgrading the istio-init container in the pod.
 
 ## Description
 
-The service mesh functions by injecting an istio-init container into every
-Kubernetes pod.  This init container sets up the pod so that the application
-container will send traffic through the sidecar container.
+The service mesh functions by injecting a sidecar proxy container into every
+Kubernetes pod. Sidecars communicate with each other and with the control plane
+to enable mesh features.
 
-The `istio-sidecar-injector` configmap specifies which istio-init container Image to
-inject into new workloads (like Deployments, DaemonSets, and Jobs) when they
-are configured in your cluster.
+Whenever a new pod is created in a namespace where automatic sidecar injection
+has been enabled, the injector will modify your pod by adding Istio components.
 
-This warning is generated when a pod is detected that is using an
-istio-init container from a different image than what is specified in that
-configmap (for new workloads).  If you recreated the same workload from
-scratch, a different istio-init container image would be injected.
+This warning is generated when a pod is using a `istio-init` init container
+image that is different than what the injector uses. If that pod is deleted, the
+replacement pod would be injected with a sidecar matching the image from the
+`istio-sidecar-injector` configmap. 
 
-This image may be missing features, bugfixes or security patches.  It may not
-be fully compatible with the control plane.
+Mismatched images can be problematic for different reasons such as: 
+- missing features, bugfixes, or security patches
+- not compatible with other sidecars or the control plane
+
 
 ## Suggested Resolution
 
-Upgrade the istio-init image for these workloads to match the version in the
-`istio-sidecar-injector` configmap, by doing one of the following:
+Re-create this pod so it is injected with a new sidecar matching the version in
+the configmap. 
 
-- re-create these workloads again so they are injected with the new istio-init container
-- editing the workload (for example, the Deployment)
+If the pod is managed by a deployment or stateful set, etc., you can delete the
+pod and the pod will be recreated with the correct version. Before deleteing a
+pod, make sure that deleting it will not affect the state of your workload.
